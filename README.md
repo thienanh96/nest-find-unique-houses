@@ -26,6 +26,16 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Overview
+
+The main logic (algorithm and implementation) is in `src/app.service.ts`.
+
+API tests are in `test/app.e2e-spec.ts`.
+
+The endpoint: 
+- POST http://localhost:3000/unique-houses
+- File CSV upload with multipart: The key is `file` and the value is the file content
+
 ## Installation
 
 ```bash
