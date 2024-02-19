@@ -6,66 +6,45 @@ export class AppService {
 
   /**
    * Find the unique pairs houseId-houseAddress
-   * Code complexity: 0(3n) ~ 0(n)
+   * Code complexity: 0(n)
    *
    * @returns
    */
   findUniqueHouses(housePairs: Array<HousePair>) {
-    const idAddressesMap = this.buildIdAddressMap(housePairs);
-    const addressIdsMap = this.buildAddressIdMap(housePairs);
+    const houseIdsMap = new Map<number, number>();
+    const houseAddressesMap = new Map<string, number>();
+    const groupedHouses: Array<Array<HousePair>> = [];
 
-    let countDuplication = 0;
+    housePairs.forEach((housePair) => {
+      const { houseId, houseAddress } = housePair;
 
-    // Loop for each houseId in id-addresses table then reference to address-ids table to find the duplications
-    idAddressesMap.forEach((houseAddresses) => {
-      houseAddresses.forEach((address) => {
-        // all other ids except the current one (in current iteration) are counted as duplications
-        countDuplication += addressIdsMap.get(address).size - 1;
-      });
-    });
+      const houseIdGroupIndex = houseIdsMap.get(houseId);
+      const houseAddressGroupIndex = houseAddressesMap.get(houseAddress);
 
-    // divided by 2 because the duplication is counted twice, for ex id 1 is considered the same as 2 and 2 is considered the same as 1
-    return idAddressesMap.size - countDuplication / 2;
-  }
+      if (houseIdGroupIndex !== undefined) {
+        // If the houseId was seen before, add the pair to its group
+        groupedHouses[houseIdGroupIndex].push(housePair);
 
-  /**
-   * Build map table between houseId and many houseAddresses
-   *
-   * @param data
-   * @returns
-   */
-  private buildIdAddressMap(data: Array<HousePair>) {
-    const idAddressesMap = new Map<string, Set<string>>();
+        // Also update the address map to reflect the group index, in case it's not already set
+        houseAddressesMap.set(houseAddress, houseIdGroupIndex);
+      } else if (houseAddressGroupIndex !== undefined) {
+        // If the houseAddress was seen before, but not the houseId
+        groupedHouses[houseAddressGroupIndex].push(housePair);
 
-    data.forEach((pair) => {
-      if (!idAddressesMap.has(pair.houseId)) {
-        idAddressesMap.set(pair.houseId, new Set());
+        // Update the houseId map to reflect the group index
+        houseIdsMap.set(houseId, houseAddressGroupIndex);
+      } else {
+        // If neither the houseId nor the houseAddress was seen before, create a new group
+        groupedHouses.push([housePair]);
+
+        const newIndex = groupedHouses.length;
+
+        houseIdsMap.set(houseId, newIndex);
+        houseAddressesMap.set(houseAddress, newIndex);
       }
-
-      idAddressesMap.get(pair.houseId).add(pair.houseAddress);
     });
 
-    return idAddressesMap;
-  }
-
-  /**
-   * Build map table between houseAddress and many houseIds
-   *
-   * @param data
-   * @returns
-   */
-  private buildAddressIdMap(data: Array<HousePair>) {
-    const addressIdsMap = new Map<string, Set<string>>();
-
-    data.forEach((pair) => {
-      if (!addressIdsMap.has(pair.houseAddress)) {
-        addressIdsMap.set(pair.houseAddress, new Set());
-      }
-
-      addressIdsMap.get(pair.houseAddress).add(pair.houseId);
-    });
-
-    return addressIdsMap;
+    return groupedHouses.length;
   }
 
   isSupportedMimeType(mimeType: string) {
@@ -74,6 +53,6 @@ export class AppService {
 }
 
 export interface HousePair {
-  houseId: string;
+  houseId: number;
   houseAddress: string;
 }
